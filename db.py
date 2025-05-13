@@ -6,7 +6,7 @@ import sqlite3
 from pathlib import Path
 from typing import Dict
 
-DB_PATH = Path("bookings.db")
+DB_PATH = Path("data/bookings.db")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS listings (
