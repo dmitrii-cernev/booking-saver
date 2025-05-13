@@ -43,6 +43,19 @@ def fetch_listing(url: str) -> Dict:
         driver.get(url)
         wait = WebDriverWait(driver, 20)
 
+        # 1b) wait for the dates button and extract check-in/out display text
+        date_btn = wait.until(
+            EC.presence_of_element_located(
+                (By.CSS_SELECTOR, "button[data-testid='searchbox-dates-container']")
+            )
+        )
+        checkin = date_btn.find_element(
+            By.CSS_SELECTOR, "[data-testid='date-display-field-start']"
+        ).text.strip()
+        checkout = date_btn.find_element(
+            By.CSS_SELECTOR, "[data-testid='date-display-field-end']"
+        ).text.strip()
+
         # 1) wait for the main property card container
         card = wait.until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-testid='property-card']"))
@@ -85,9 +98,8 @@ def fetch_listing(url: str) -> Dict:
         else:
             reviews_count = 0
 
-        # 5) unit type / bed info / cancellation
+        # 5) unit type / cancellation
         unit = _text("[data-testid='recommended-units'] h4")
-        bed_info = card.find_element(By.CSS_SELECTOR, "ul li .fff1944c52").text.strip()
         cancellation = ""
         try:
             card.find_element(By.CSS_SELECTOR, "[data-testid='cancellation-policy-icon']")
@@ -113,10 +125,11 @@ def fetch_listing(url: str) -> Dict:
             "review_score": review_score,
             "reviews_count": reviews_count,
             "unit": unit,
-            "bed_info": bed_info,
             "cancellation": cancellation,
             "nights_adults": nights_adults,
             "price": price,
+            "checkin": checkin,
+            "checkout": checkout,
             "scraped_at": now,
             "source_url": final_url,
         }

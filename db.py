@@ -15,16 +15,18 @@ CREATE TABLE IF NOT EXISTS listings (
     link           TEXT,
     address        TEXT,
     distance       TEXT,
+    checkin        TEXT,
+    checkout       TEXT,
     review_score   REAL,
     reviews_count  INTEGER,
     unit           TEXT,
-    bed_info       TEXT,
     cancellation   TEXT,
     nights_adults  TEXT,
     price          TEXT,
+    price_per_night REAL,
     scraped_at     TEXT,
     source_url     TEXT,
-    PRIMARY KEY (hotel_id, source_url)
+    PRIMARY KEY (hotel_id, link, checkin, checkout)
 );
 """
 
