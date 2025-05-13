@@ -64,13 +64,26 @@ def fetch_listing(url: str) -> Dict:
 
         # 4) review score & count
         score_block = card.find_element(By.CSS_SELECTOR, "[data-testid='review-score-link']")
+        # parse the numeric score as before
         review_score = float(
             score_block.find_element(By.CSS_SELECTOR, "div[aria-hidden='true']").text.replace(",", ".")
         )
-        extra = score_block.find_element(By.CSS_SELECTOR, ".aa225776f2").text
-        # extract the first integer (e.g. "Very good 29 reviews" → 29)
-        m = re.search(r"(\d+)", extra)
-        reviews_count = int(m.group(1)) if m else 0
+
+        # now grab all visible text in that block
+        block_text = score_block.text
+
+        # look for e.g. "29 reviews", "1 review", "1 222 opinii", "1 opinia"
+        m = re.search(
+            r"([\d\ \u00A0]+)\s*(?:review(?:s)?|opinia|opinie|opinii)",
+            block_text,
+            re.IGNORECASE
+        )
+        if m:
+            # strip both normal spaces and NBSPs
+            raw = m.group(1).replace(" ", "").replace("\u00A0", "")
+            reviews_count = int(raw)
+        else:
+            reviews_count = 0
 
         # 5) unit type / bed info / cancellation
         unit = _text("[data-testid='recommended-units'] h4")
