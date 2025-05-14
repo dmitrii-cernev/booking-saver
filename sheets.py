@@ -116,7 +116,7 @@ def init_sheet() -> None:
                 "rule": {
                     "ranges": [{"sheetId": sheet_id, "startColumnIndex": 3, "endColumnIndex": 4}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_GREATER_THAN_EQ", "values": [{"userEnteredValue": "4.5"}]},
+                        "condition": {"type": "NUMBER_GREATER_THAN_EQ", "values": [{"userEnteredValue": "9"}]},
                         "format": {"backgroundColor": {"red": 0.5, "green": 0.9, "blue": 0.5}}
                     }
                 },
@@ -130,7 +130,7 @@ def init_sheet() -> None:
                     "booleanRule": {
                         "condition": {
                             "type": "NUMBER_BETWEEN",
-                            "values": [{"userEnteredValue": "4"}, {"userEnteredValue": "4.5"}]
+                            "values": [{"userEnteredValue": "8"}, {"userEnteredValue": "9"}]
                         },
                         "format": {"backgroundColor": {"red": 0.7, "green": 0.9, "blue": 0.7}}
                     }
@@ -145,7 +145,7 @@ def init_sheet() -> None:
                     "booleanRule": {
                         "condition": {
                             "type": "NUMBER_BETWEEN",
-                            "values": [{"userEnteredValue": "3.5"}, {"userEnteredValue": "4"}]
+                            "values": [{"userEnteredValue": "7"}, {"userEnteredValue": "8"}]
                         },
                         "format": {"backgroundColor": {"red": 0.9, "green": 0.9, "blue": 0.6}}
                     }
@@ -160,7 +160,7 @@ def init_sheet() -> None:
                     "booleanRule": {
                         "condition": {
                             "type": "NUMBER_BETWEEN",
-                            "values": [{"userEnteredValue": "3"}, {"userEnteredValue": "3.5"}]
+                            "values": [{"userEnteredValue": "6"}, {"userEnteredValue": "7"}]
                         },
                         "format": {"backgroundColor": {"red": 1, "green": 0.9, "blue": 0.6}}
                     }
@@ -173,7 +173,7 @@ def init_sheet() -> None:
                 "rule": {
                     "ranges": [{"sheetId": sheet_id, "startColumnIndex": 3, "endColumnIndex": 4}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "3"}]},
+                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "6"}]},
                         "format": {"backgroundColor": {"red": 1, "green": 0.7, "blue": 0.7}}
                     }
                 },
@@ -340,7 +340,7 @@ def init_sheet() -> None:
                 "index": 16
             }
         },
-        # Conditional formatting: Cancellation (col P idx 15)
+        # Conditional formatting: Free Cancellation (col P idx 15)
         {
             "addConditionalFormatRule": {
                 "rule": {
@@ -373,14 +373,17 @@ def append_row(rec: Dict) -> None:
     except:
         price_per_night = ""
 
-    # Calculate Overall Score (1-5 scale)
+    # Calculate Overall Score (1-10 scale)
     booking_score = float(rec.get("review_score", 0)) if rec.get("review_score") else 0
     booking_count = int(rec.get("reviews_count", 0)) if rec.get("reviews_count") else 0
     google_score = float(rec.get("google_review_score", 0)) if rec.get("google_review_score") else 0
     google_count = int(rec.get("google_reviews_count", 0)) if rec.get("google_reviews_count") else 0
     
-    # Convert Booking.com score from 10-point to 5-point scale
-    booking_score_adj = booking_score / 2 if booking_score else 0
+    # Use Booking.com score directly (already 0-10 scale)
+    booking_score_adj = booking_score if booking_score else 0
+    
+    # Convert Google's 5-point scale to 10-point scale
+    google_score_adj = google_score * 2 if google_score else 0
     
     # Weight factors based on review counts
     booking_weight = min(booking_count / 100, 1) if booking_count else 0
@@ -388,17 +391,22 @@ def append_row(rec: Dict) -> None:
     
     # Calculate weighted average, with penalty for missing Google reviews
     if booking_score and google_score:
-        overall_score = ((booking_score_adj * booking_weight) + (google_score * google_weight)) / (booking_weight + google_weight)
+        overall_score = ((booking_score_adj * booking_weight) + (google_score_adj * google_weight)) / (booking_weight + google_weight)
     elif booking_score:
         # Apply a 10% penalty for missing Google reviews
         overall_score = booking_score_adj * 0.9
     elif google_score:
-        overall_score = google_score
+        overall_score = google_score_adj
     else:
         overall_score = 0
+    
+    # Add bonus for free cancellation (0.5 points)
+    cancellation = rec.get("cancellation", "").lower()
+    if cancellation == "yes" or "free" in cancellation:
+        overall_score += 0.5
         
-    # Ensure score is between 1-5 and round to 1 decimal
-    overall_score = round(max(min(overall_score, 5), 1) if overall_score else 0, 1)
+    # Ensure score is between 1-10 and round to 1 decimal
+    overall_score = round(max(min(overall_score, 10), 1) if overall_score else 0, 1)
 
     # Build row: hyperlink Name and Google Maps URL
     link = rec.get("link", "")
