@@ -48,13 +48,21 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         try:
             log.info("Scraping %s", url)
             data = scraper.fetch_listing(url)  # blocking, quick enough
-            db.insert_listing(data)
-            sheets.append_row(data)
-            await update.message.reply_text(f"Saved ✅ {data['name']}")
+
+            # Check if listing already exists
+            if db.listing_exists(data):
+                await update.message.reply_text(
+                    f"⚠️ Duplicate: {data['name']} with these dates ({data['checkin']} - {data['checkout']}) "
+                    f"already exists in your saved listings."
+                )
+            else:
+                db.insert_listing(data)
+                sheets.append_row(data)
+                await update.message.reply_text(f"Saved ✅ {data['name']}")
+
         except Exception as exc:  # broad catch is fine for a bot
             log.exception("Failed to process %s", url)
-            await update.message.reply_text(f"⚠️ Error: {exc}")
-
+            await update.message.reply_text(f"⚠️ Error: {exc}")
 
 def main() -> None:
     """Entry‑point."""

@@ -51,6 +51,17 @@ def insert_listing(rec: Dict) -> None:
         conn.execute(sql, tuple(rec.values()))
         conn.commit()
 
+def listing_exists(rec: Dict) -> bool:
+    """Check if listing already exists in database with same dates."""
+    sql = """
+    SELECT 1 FROM listings 
+    WHERE link = ? AND checkin = ? AND checkout = ?
+    LIMIT 1
+    """
+    with _connect() as conn:
+        result = conn.execute(sql, (rec['link'], rec['checkin'], rec['checkout'])).fetchone()
+        return result is not None
+
 
 if __name__ == "__main__":
     init_db()
