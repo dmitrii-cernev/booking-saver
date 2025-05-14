@@ -17,6 +17,7 @@ from typing import Dict
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -35,8 +36,11 @@ def fetch_listing(url: str) -> Dict:
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     )
+    chrome_opts.binary_location = "/usr/bin/chromium"
 
-    driver = webdriver.Chrome(options=chrome_opts)
+    service = Service(executable_path="/usr/bin/chromedriver")
+
+    driver = webdriver.Chrome(service=service, options=chrome_opts)
     driver.set_window_size(1920, 1080)
 
     try:

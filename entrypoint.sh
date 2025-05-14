@@ -1,8 +1,11 @@
 #!/bin/sh
 set -e
 
+# Create data directory if it doesn't exist
+mkdir -p data
+
 # If there's no DB file yet, initialize it
-if [ ! -f bookings.db ]; then
+if [ ! -f data/bookings.db ]; then
   echo "❯ Initializing SQLite schema…"
   python db.py
 fi
