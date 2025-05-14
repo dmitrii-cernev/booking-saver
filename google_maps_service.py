@@ -96,6 +96,16 @@ def fetch_google_maps_review(
         # Wait for page to fully load
         wait.until(lambda d: d.execute_script("return document.readyState") == "complete")
         time.sleep(3)  # Let the page stabilize
+        
+        # Check if we're still on a search results page and not a specific place page
+        current_url = driver.current_url
+        if "/maps/search/" in current_url or "/maps/place/" not in current_url:
+            print("Still on search results page, no exact property match found")
+            return {
+                "google_review_score": None,
+                "google_reviews_count": None,
+                "google_maps_url": None,  # Return None instead of search URL
+            }
 
         # Try multiple selectors for the review container
         selectors = [
@@ -122,7 +132,7 @@ def fetch_google_maps_review(
             return {
                 "google_review_score": None,
                 "google_reviews_count": None,
-                "google_maps_url": search_url,  # Just return the search URL
+                "google_maps_url": None,  # Return None instead of search URL
             }
 
         # Extract review score and count using multiple methods
@@ -170,6 +180,15 @@ def fetch_google_maps_review(
             except Exception:
                 pass
 
+        # If we don't have both score and count, the page might not be showing a proper property page
+        if not review_score or not reviews_count:
+            print("Missing review data, likely not a specific property page")
+            return {
+                "google_review_score": None,
+                "google_reviews_count": None,
+                "google_maps_url": None,
+            }
+
         # Get the URL
         google_maps_url = driver.current_url
 
@@ -192,7 +211,7 @@ def fetch_google_maps_review(
         return {
             "google_review_score": None,
             "google_reviews_count": None,
-            "google_maps_url": search_url,
+            "google_maps_url": None,  # Return None instead of search URL
         }
     finally:
         driver.quit()

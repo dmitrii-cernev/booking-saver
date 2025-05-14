@@ -280,12 +280,11 @@ def append_row(rec: Dict) -> None:
     name_hyper = f'=HYPERLINK("{link}", "{name}")'
 
     # Handle missing or search-only Google Maps URL
-    google_maps_url = rec.get("google_maps_url", "")
-    is_search_url = "maps/search/" in google_maps_url
-
-    # If it's just a search URL or missing, show "No Link"
-    if not google_maps_url or is_search_url:
-        maps_hyper = "No Link"
+    google_maps_url = rec.get("google_maps_url", None)
+    
+    # If google_maps_url is None, there's no valid match on Google Maps
+    if google_maps_url is None:
+        maps_hyper = "No Match"
     else:
         maps_hyper = f'=HYPERLINK("{google_maps_url}", "Link")'
 
