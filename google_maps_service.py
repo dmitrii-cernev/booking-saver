@@ -112,16 +112,18 @@ def fetch_google_maps_review(
                 container = wait.until(EC.presence_of_element_located((By.CSS_SELECTOR, selector)))
                 if container:
                     print(f"Found container with selector: {selector}")
-                    # Take a small portion of the page for debugging
-                    parent = container.find_element(By.XPATH, "./ancestor::div[3]")
-                    print(f"Container parent HTML: {parent.get_attribute('outerHTML')}")
                     break
             except Exception as e:
                 print(f"Selector {selector} failed: {str(e)}")
                 continue
 
         if not container:
-            raise Exception("Could not find review container with any selector")
+            print("No review container found, returning default values")
+            return {
+                "google_review_score": None,
+                "google_reviews_count": None,
+                "google_maps_url": search_url,  # Just return the search URL
+            }
 
         # Extract review score and count using multiple methods
         review_score = None
