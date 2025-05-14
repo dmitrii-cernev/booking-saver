@@ -109,10 +109,10 @@ def fetch_listing(url: str) -> Dict:
 
         # 5) unit type / cancellation
         unit = _text("[data-testid='recommended-units'] h4")
-        cancellation = ""
+        cancellation = "No"
         try:
             card.find_element(By.CSS_SELECTOR, "[data-testid='cancellation-policy-icon']")
-            cancellation = "Free cancellation"
+            cancellation = "Yes"
         except:
             pass
 

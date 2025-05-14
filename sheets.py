@@ -253,6 +253,19 @@ def init_sheet() -> None:
                 },
                 "index": 11
             }
+        },
+        # Conditional formatting: Cancellation (col O idx 14)
+        {
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 14, "endColumnIndex": 15}],
+                    "booleanRule": {
+                        "condition": {"type": "TEXT_EQ", "values": [{"userEnteredValue": "Yes"}]},
+                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
+                    }
+                },
+                "index": 12
+            }
         }
     ]
     sheets.batchUpdate(spreadsheetId=SHEET_ID, body={"requests": requests}).execute()
