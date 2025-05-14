@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS listings (
     google_review_score REAL,
     google_reviews_count  INTEGER,
     google_maps_url TEXT,
+    overall_score  REAL,
     unit           TEXT,
     cancellation   TEXT,
     nights_adults  TEXT,

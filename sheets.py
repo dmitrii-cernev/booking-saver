@@ -20,11 +20,12 @@ if not SHEET_ID:
 
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 
-# New header order with checkin/checkout
+# New header order with Overall Score before other review metrics
 HEADER_TITLES = [
     "Name",
     "Address",
     "Distance",
+    "Overall Score",
     "Review Score",
     "Reviews Count",
     "Google Review Score",
@@ -36,7 +37,7 @@ HEADER_TITLES = [
     "Check-out",
     "Nights & Adults",
     "Unit",
-    "Cancellation",
+    "Free Cancellation",
 ]
 
 
@@ -69,6 +70,21 @@ def init_sheet() -> None:
     meta = sheets.get(spreadsheetId=SHEET_ID).execute()
     sheet_id = meta["sheets"][0]["properties"]["sheetId"]
 
+    # First clear all existing conditional formatting
+    clear_formatting_request = {
+        "deleteConditionalFormatRule": {
+            "sheetId": sheet_id,
+            "index": 0,
+            "allRules": True
+        }
+    }
+    
+    try:
+        sheets.batchUpdate(spreadsheetId=SHEET_ID, body={"requests": [clear_formatting_request]}).execute()
+    except:
+        # Ignore errors if no rules exist
+        pass
+
     # Build formatting requests (bold header, freeze, conditional rules)
     requests = [
         # Bold + grey header
@@ -94,14 +110,14 @@ def init_sheet() -> None:
                 "fields": "gridProperties.frozenRowCount",
             }
         },
-        # Conditional formatting: Review Score (col D idx 3)
+        # Conditional formatting: Overall Score (col D idx 3)
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 3, "endColumnIndex": 4}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 3, "endColumnIndex": 4}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "8"}]},
-                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
+                        "condition": {"type": "NUMBER_GREATER_THAN_EQ", "values": [{"userEnteredValue": "4.5"}]},
+                        "format": {"backgroundColor": {"red": 0.5, "green": 0.9, "blue": 0.5}}
                     }
                 },
                 "index": 0
@@ -110,13 +126,13 @@ def init_sheet() -> None:
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 3, "endColumnIndex": 4}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 3, "endColumnIndex": 4}],
                     "booleanRule": {
                         "condition": {
                             "type": "NUMBER_BETWEEN",
-                            "values": [{"userEnteredValue": "7"}, {"userEnteredValue": "8"}]
+                            "values": [{"userEnteredValue": "4"}, {"userEnteredValue": "4.5"}]
                         },
-                        "format": {"backgroundColor": {"red": 1, "green": 1, "blue": 0.6}}
+                        "format": {"backgroundColor": {"red": 0.7, "green": 0.9, "blue": 0.7}}
                     }
                 },
                 "index": 1
@@ -125,23 +141,28 @@ def init_sheet() -> None:
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 3, "endColumnIndex": 4}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 3, "endColumnIndex": 4}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "7"}]},
-                        "format": {"backgroundColor": {"red": 1, "green": 0.8, "blue": 0.8}}
+                        "condition": {
+                            "type": "NUMBER_BETWEEN",
+                            "values": [{"userEnteredValue": "3.5"}, {"userEnteredValue": "4"}]
+                        },
+                        "format": {"backgroundColor": {"red": 0.9, "green": 0.9, "blue": 0.6}}
                     }
                 },
                 "index": 2
             }
         },
-        # Conditional formatting: Reviews Count (col E idx 4)
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 4, "endColumnIndex": 5}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 3, "endColumnIndex": 4}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "75"}]},
-                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
+                        "condition": {
+                            "type": "NUMBER_BETWEEN",
+                            "values": [{"userEnteredValue": "3"}, {"userEnteredValue": "3.5"}]
+                        },
+                        "format": {"backgroundColor": {"red": 1, "green": 0.9, "blue": 0.6}}
                     }
                 },
                 "index": 3
@@ -150,38 +171,38 @@ def init_sheet() -> None:
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 4, "endColumnIndex": 5}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 3, "endColumnIndex": 4}],
                     "booleanRule": {
-                        "condition": {
-                            "type": "NUMBER_BETWEEN",
-                            "values": [{"userEnteredValue": "10"}, {"userEnteredValue": "75"}]
-                        },
-                        "format": {"backgroundColor": {"red": 1, "green": 1, "blue": 0.6}}
+                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "3"}]},
+                        "format": {"backgroundColor": {"red": 1, "green": 0.7, "blue": 0.7}}
                     }
                 },
                 "index": 4
             }
         },
+        # Conditional formatting: Review Score (col E idx 4)
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 4, "endColumnIndex": 5}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 4, "endColumnIndex": 5}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "10"}]},
-                        "format": {"backgroundColor": {"red": 1, "green": 0.8, "blue": 0.8}}
+                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "8"}]},
+                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
                     }
                 },
                 "index": 5
             }
         },
-        # Conditional formatting: Google Review Score (col F idx 5)
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 5, "endColumnIndex": 6}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 4, "endColumnIndex": 5}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_GREATER_THAN_EQ", "values": [{"userEnteredValue": "4.4"}]},
-                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
+                        "condition": {
+                            "type": "NUMBER_BETWEEN",
+                            "values": [{"userEnteredValue": "7"}, {"userEnteredValue": "8"}]
+                        },
+                        "format": {"backgroundColor": {"red": 1, "green": 1, "blue": 0.6}}
                     }
                 },
                 "index": 6
@@ -190,38 +211,38 @@ def init_sheet() -> None:
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 5, "endColumnIndex": 6}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 4, "endColumnIndex": 5}],
                     "booleanRule": {
-                        "condition": {
-                            "type": "NUMBER_BETWEEN",
-                            "values": [{"userEnteredValue": "4"}, {"userEnteredValue": "4.4"}]
-                        },
-                        "format": {"backgroundColor": {"red": 1, "green": 1, "blue": 0.6}}
+                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "7"}]},
+                        "format": {"backgroundColor": {"red": 1, "green": 0.8, "blue": 0.8}}
                     }
                 },
                 "index": 7
             }
         },
+        # Conditional formatting: Reviews Count (col F idx 5)
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 5, "endColumnIndex": 6}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 5, "endColumnIndex": 6}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "4"}]},
-                        "format": {"backgroundColor": {"red": 1, "green": 0.8, "blue": 0.8}}
+                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "75"}]},
+                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
                     }
                 },
                 "index": 8
             }
         },
-        # Conditional formatting: Google Reviews Count (col G idx 6)
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 6, "endColumnIndex": 7}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 5, "endColumnIndex": 6}],
                     "booleanRule": {
-                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "250"}]},
-                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
+                        "condition": {
+                            "type": "NUMBER_BETWEEN",
+                            "values": [{"userEnteredValue": "10"}, {"userEnteredValue": "75"}]
+                        },
+                        "format": {"backgroundColor": {"red": 1, "green": 1, "blue": 0.6}}
                     }
                 },
                 "index": 9
@@ -230,7 +251,72 @@ def init_sheet() -> None:
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 6, "endColumnIndex": 7}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 5, "endColumnIndex": 6}],
+                    "booleanRule": {
+                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "10"}]},
+                        "format": {"backgroundColor": {"red": 1, "green": 0.8, "blue": 0.8}}
+                    }
+                },
+                "index": 10
+            }
+        },
+        # Conditional formatting: Google Review Score (col G idx 6)
+        {
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 6, "endColumnIndex": 7}],
+                    "booleanRule": {
+                        "condition": {"type": "NUMBER_GREATER_THAN_EQ", "values": [{"userEnteredValue": "4.4"}]},
+                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
+                    }
+                },
+                "index": 11
+            }
+        },
+        {
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 6, "endColumnIndex": 7}],
+                    "booleanRule": {
+                        "condition": {
+                            "type": "NUMBER_BETWEEN",
+                            "values": [{"userEnteredValue": "4"}, {"userEnteredValue": "4.4"}]
+                        },
+                        "format": {"backgroundColor": {"red": 1, "green": 1, "blue": 0.6}}
+                    }
+                },
+                "index": 12
+            }
+        },
+        {
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 6, "endColumnIndex": 7}],
+                    "booleanRule": {
+                        "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "4"}]},
+                        "format": {"backgroundColor": {"red": 1, "green": 0.8, "blue": 0.8}}
+                    }
+                },
+                "index": 13
+            }
+        },
+        # Conditional formatting: Google Reviews Count (col H idx 7)
+        {
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 7, "endColumnIndex": 8}],
+                    "booleanRule": {
+                        "condition": {"type": "NUMBER_GREATER", "values": [{"userEnteredValue": "250"}]},
+                        "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
+                    }
+                },
+                "index": 14
+            }
+        },
+        {
+            "addConditionalFormatRule": {
+                "rule": {
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 7, "endColumnIndex": 8}],
                     "booleanRule": {
                         "condition": {
                             "type": "NUMBER_BETWEEN",
@@ -239,32 +325,32 @@ def init_sheet() -> None:
                         "format": {"backgroundColor": {"red": 1, "green": 1, "blue": 0.6}}
                     }
                 },
-                "index": 10
+                "index": 15
             }
         },
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 6, "endColumnIndex": 7}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 7, "endColumnIndex": 8}],
                     "booleanRule": {
                         "condition": {"type": "NUMBER_LESS", "values": [{"userEnteredValue": "50"}]},
                         "format": {"backgroundColor": {"red": 1, "green": 0.8, "blue": 0.8}}
                     }
                 },
-                "index": 11
+                "index": 16
             }
         },
-        # Conditional formatting: Cancellation (col O idx 14)
+        # Conditional formatting: Cancellation (col P idx 15)
         {
             "addConditionalFormatRule": {
                 "rule": {
-                    "ranges": [{"sheetId": sheet_id, "startRowIndex": 1, "startColumnIndex": 14, "endColumnIndex": 15}],
+                    "ranges": [{"sheetId": sheet_id, "startColumnIndex": 15, "endColumnIndex": 16}],
                     "booleanRule": {
                         "condition": {"type": "TEXT_EQ", "values": [{"userEnteredValue": "Yes"}]},
                         "format": {"backgroundColor": {"red": 0.8, "green": 1, "blue": 0.8}}
                     }
                 },
-                "index": 12
+                "index": 17
             }
         }
     ]
@@ -287,6 +373,33 @@ def append_row(rec: Dict) -> None:
     except:
         price_per_night = ""
 
+    # Calculate Overall Score (1-5 scale)
+    booking_score = float(rec.get("review_score", 0)) if rec.get("review_score") else 0
+    booking_count = int(rec.get("reviews_count", 0)) if rec.get("reviews_count") else 0
+    google_score = float(rec.get("google_review_score", 0)) if rec.get("google_review_score") else 0
+    google_count = int(rec.get("google_reviews_count", 0)) if rec.get("google_reviews_count") else 0
+    
+    # Convert Booking.com score from 10-point to 5-point scale
+    booking_score_adj = booking_score / 2 if booking_score else 0
+    
+    # Weight factors based on review counts
+    booking_weight = min(booking_count / 100, 1) if booking_count else 0
+    google_weight = min(google_count / 200, 1) if google_count else 0
+    
+    # Calculate weighted average, with penalty for missing Google reviews
+    if booking_score and google_score:
+        overall_score = ((booking_score_adj * booking_weight) + (google_score * google_weight)) / (booking_weight + google_weight)
+    elif booking_score:
+        # Apply a 10% penalty for missing Google reviews
+        overall_score = booking_score_adj * 0.9
+    elif google_score:
+        overall_score = google_score
+    else:
+        overall_score = 0
+        
+    # Ensure score is between 1-5 and round to 1 decimal
+    overall_score = round(max(min(overall_score, 5), 1) if overall_score else 0, 1)
+
     # Build row: hyperlink Name and Google Maps URL
     link = rec.get("link", "")
     name = rec.get("name", "")
@@ -305,6 +418,7 @@ def append_row(rec: Dict) -> None:
         name_hyper,
         rec.get("address"),
         rec.get("distance"),
+        overall_score if overall_score else "",
         rec.get("review_score"),
         rec.get("reviews_count"),
         rec.get("google_review_score"),
