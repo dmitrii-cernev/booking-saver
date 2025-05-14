@@ -9,11 +9,12 @@ Flow:
 4) Extract name, address, distance, review score/count, unit details, price, etc.
 5) Quit the driver in all cases to free resources.
 """
-
+import os
 import re
 from datetime import datetime, timezone
 from typing import Dict
 
+from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.chrome.options import Options
@@ -22,6 +23,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 
+
+load_dotenv()
+CHROMEDRIVER_PATH = os.getenv("CHROMEDRIVER_PATH", "/usr/bin/chromedriver")
+CHROME_BINARY = os.getenv("CHROME_BINARY", "/usr/bin/chromium")
 
 def fetch_listing(url: str) -> Dict:
     chrome_opts = Options()
@@ -36,9 +41,9 @@ def fetch_listing(url: str) -> Dict:
         "AppleWebKit/537.36 (KHTML, like Gecko) "
         "Chrome/124.0.0.0 Safari/537.36"
     )
-    chrome_opts.binary_location = "/usr/bin/chromium"
+    chrome_opts.binary_location = CHROME_BINARY
 
-    service = Service(executable_path="/usr/bin/chromedriver")
+    service = Service(executable_path=CHROMEDRIVER_PATH)
 
     driver = webdriver.Chrome(service=service, options=chrome_opts)
     driver.set_window_size(1920, 1080)

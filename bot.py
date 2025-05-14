@@ -48,7 +48,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         try:
             log.info("Scraping %s", url)
             data = scraper.fetch_listing(url)  # blocking, quick enough
-
+            city = data["address"].split(",")[0]
+            from google_maps_service import fetch_google_maps_review
+            maps= fetch_google_maps_review(data["name"], city)
+            data.update(maps)
             # Check if listing already exists
             if db.listing_exists(data):
                 await update.message.reply_text(
