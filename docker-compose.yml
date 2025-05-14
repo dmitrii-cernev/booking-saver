@@ -7,12 +7,10 @@ services:
     volumes:
       - ./:/app
       - db_data:/app/data
-      - ./service_account.json:/app/service_account.json
     env_file:
       - .env
     environment:
       - INIT_SHEETS=1
-      - GOOGLE_CREDENTIALS_JSON=/app/service_account.json
 
 volumes:
   db_data:
